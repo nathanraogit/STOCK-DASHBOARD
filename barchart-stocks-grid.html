@@ -59,30 +59,47 @@
     border-left: 1px solid var(--border-color);
   }
   .chart-container {
-    height: 350px;
+    height: 480px;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 32px;
   }
-  .controls, .cap-filter, .change-filter {
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
+  .controls {
+    padding: 6px 10px;
+    border-radius: 5px;
+    margin-bottom: 4px;
   }
   .section-title {
     color: var(--text-secondary);
-    font-size: 10px;
+    font-size: 8px;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-bottom: 15px;
-    font-weight: 800;
+    letter-spacing: 0.8px;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+    line-height: 1;
   }
-  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin: 0;
+  }
   .radio-item {
-    font-size: 13px; background: var(--bg-card); padding: 10px 14px;
-    border-radius: 6px; border: 1px solid transparent; cursor: pointer;
+    font-size: 10px;
+    background: transparent;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
   }
-  .radio-item input[type="radio"] { margin-right: 12px; accent-color: var(--accent); }
+  .radio-item input[type="radio"] {
+    margin-right: 4px;
+    accent-color: var(--accent);
+    transform: scale(0.9);
+  }
   .cap-buttons, .change-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 6px; }
   .cap-btn, .change-btn {
     padding: 8px 0; border-radius: 4px; text-align: center; cursor: pointer;
@@ -100,26 +117,46 @@
   }
   .ag-row { color: #ffffff !important; }
   .ag-header-cell-label { justify-content: center; font-weight: 800 !important; text-transform: uppercase; color: #ffffff !important; }
-  .ag-cell[col-id="symbol"] { color: #ffffff !important; font-weight: 800 !important; font-family: var(--font-mono); }
-  .ag-cell[col-id="name"]   { font-weight: 500; color: #e2e8f0; }
-  .ag-cell[col-id="industry"] { color: #cbd5e0 !important; }
-  .ag-floating-filter-input { background-color: #2d343f !important; border: 1px solid var(--border-color) !important; }
-  .ag-floating-filter-input input { color: #ffffff !important; }
-  .ag-popup, .ag-menu, .ag-filter-wrapper, .ag-picker-field-wrapper, .ag-list-item {
-    background-color: #1c222d !important;
-    border: 1px solid var(--accent) !important;
-    color: #ffffff !important;
+  .ag-cell[col-id="symbol"] {
+    color: #60a5fa !important;
+    font-weight: 800 !important;
+    font-family: var(--font-mono);
+    cursor: pointer;
   }
-  .ag-list-item-label, .ag-select-list-item, .ag-picker-field-display { color: #ffffff !important; }
-  .ag-list-item:hover, .ag-select-list-item:hover, .ag-menu-option-active { background-color: var(--accent) !important; color: #000000 !important; }
+  .ag-cell[col-id="symbol"]:hover {
+    text-decoration: underline;
+    color: #93c5fd !important;
+  }
+  .ag-cell[col-id="name"] { font-weight: 500; color: #e2e8f0; }
+  .ag-cell[col-id="industry"] { color: #ffffff !important; font-weight: 500; }
   .positive { color: var(--accent) !important; font-weight: 700; }
   .negative { color: var(--negative) !important; font-weight: 700; }
   .neutral { color: #6b7280 !important; font-style: italic; }
- 
   .status { padding: 12px 20px; font-size: 11px; font-family: var(--font-mono); background: var(--bg-card); color: var(--text-secondary); border-top: 1px solid var(--border-color); }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--bg-main); }
   ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; border: 2px solid var(--bg-main); }
+  /* Dynamic industry cell background classes */
+  .industry-bg-0 { background-color: rgba(0, 209, 160, 0.22) !important; }
+  .industry-bg-1 { background-color: rgba(59, 130, 246, 0.22) !important; }
+  .industry-bg-2 { background-color: rgba(236, 72, 153, 0.22) !important; }
+  .industry-bg-3 { background-color: rgba(245, 158, 11, 0.22) !important; }
+  .industry-bg-4 { background-color: rgba(16, 185, 129, 0.22) !important; }
+  .industry-bg-5 { background-color: rgba(139, 92, 246, 0.22) !important; }
+  .industry-bg-6 { background-color: rgba(239, 68, 68, 0.22) !important; }
+  .industry-bg-7 { background-color: rgba(20, 184, 166, 0.22) !important; }
+  .industry-bg-8 { background-color: rgba(249, 115, 22, 0.22) !important; }
+  .industry-bg-9 { background-color: rgba(99, 102, 241, 0.22) !important; }
+  .industry-bg-10 { background-color: rgba(34, 211, 238, 0.22) !important; }
+  .industry-bg-11 { background-color: rgba(167, 139, 250, 0.22) !important; }
+  .industry-bg-12 { background-color: rgba(251, 191, 36, 0.22) !important; }
+  .industry-bg-13 { background-color: rgba(96, 165, 250, 0.22) !important; }
+  .industry-bg-14 { background-color: rgba(244, 114, 182, 0.22) !important; }
+  .industry-bg-15 { background-color: rgba(16, 185, 129, 0.22) !important; }
+  .industry-bg-16 { background-color: rgba(139, 92, 246, 0.22) !important; }
+  .industry-bg-17 { background-color: rgba(239, 68, 68, 0.22) !important; }
+  .industry-bg-18 { background-color: rgba(249, 115, 22, 0.22) !important; }
+  .industry-bg-19 { background-color: rgba(34, 197, 94, 0.22) !important; }
 </style>
 </head>
 <body>
@@ -136,8 +173,13 @@
       <div class="controls">
         <div class="section-title">Data Source 2026</div>
         <div class="radio-group">
+          <!-- Added Pre-Market Gainers here -->
           <div class="radio-item">
-            <input type="radio" id="todays" name="dataSource" value="todays-percentage-gainers.json" checked>
+            <input type="radio" id="premarket" name="dataSource" value="premarket_gainers.json">
+            <label for="premarket">Pre-Market Gainers</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="todays" name="dataSource" value="todays-percentage-gainers.json">
             <label for="todays">Today's % Gainers</label>
           </div>
           <div class="radio-item">
@@ -145,7 +187,7 @@
             <label for="dollar">Large Active $ Volume</label>
           </div>
           <div class="radio-item">
-            <input type="radio" id="five" name="dataSource" value="five_day_gainers.json">
+            <input type="radio" id="five" name="dataSource" value="five_day_gainers.json" checked>
             <label for="five">5-Day Gainers</label>
           </div>
         </div>
@@ -172,26 +214,21 @@
       </div>
     </div>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.1.0/dist/ag-grid-community.min.noStyle.js"></script>
   <script>
     const TODAY = new Date('2025-12-14');
     const THREE_WEEKS_MS = 21 * 24 * 60 * 60 * 1000;
     const END_DATE = new Date(TODAY.getTime() + THREE_WEEKS_MS);
-
     function parsePercent(str) {
       if (!str || str === "N/A") return null;
-      return parseFloat(str.replace(/%/g, '').trim());
+      return parseFloat(str.replace(/[%+]/g, '').trim());
     }
-
     function parseMarketCap(str) {
       if (!str || str === "N/A") return null;
       const cleaned = str.replace(/,/g, '').trim();
       const num = parseFloat(cleaned);
-      if (isNaN(num)) return null;
-      return num * 1000;
+      return isNaN(num) ? null : num * 1000;
     }
-
     function getCapCategory(value) {
       if (value === null) return "N/A";
       if (value > 200000000000) return "Mega";
@@ -199,7 +236,6 @@
       if (value > 2000000000) return "Mid";
       return "Small";
     }
-
     function parseEarningsDate(str) {
       if (!str || str === "N/A" || str.trim() === "") return null;
       const parts = str.split('/');
@@ -210,22 +246,34 @@
       const day = parseInt(parts[1]);
       return new Date(year, month, day);
     }
-
     let gridApi;
     let fixedCounts = {};
     let dynamicCounts = {};
     let barChart;
-
+    let industryColorMap = {};
+    const colorPalette = [
+      '#00d1a0', '#3b82f6', '#ec4899', '#f59e0b', '#10b981',
+      '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#6366f1',
+      '#22d3ee', '#a78bfa', '#fbbf24', '#60a5fa', '#f472b6',
+      '#4ade80', '#f87171', '#c084fc', '#facc15', '#38bdf8'
+    ];
     function calculateFixedCounts() {
       fixedCounts = {};
       gridApi.forEachNode(node => {
         const ind = node.data.industry || "Unknown";
         fixedCounts[ind] = (fixedCounts[ind] || 0) + 1;
       });
-      gridApi.refreshCells({ columns: ['fixedCount'] });
+      const filteredEntries = Object.entries(fixedCounts)
+        .filter(entry => entry[1] > 1 && entry[0] !== "Medical - Biomedical")
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20);
+      industryColorMap = {};
+      filteredEntries.forEach((entry, index) => {
+        industryColorMap[entry[0]] = index;
+      });
+      gridApi.refreshCells({ columns: ['fixedCount', 'industry'] });
       updateBarChart();
     }
-
     function updateDynamicCounts() {
       dynamicCounts = {};
       gridApi.forEachNodeAfterFilter(node => {
@@ -235,27 +283,23 @@
       gridApi.refreshCells({ columns: ['dynamicCount'] });
       updateStatus();
     }
-
     function getIndustryCount(industry, countsObj) {
       return countsObj[industry || "Unknown"] || 0;
     }
-
     function updateBarChart() {
       if (!barChart) return;
-
       const filteredEntries = Object.entries(fixedCounts)
         .filter(entry => entry[1] > 1 && entry[0] !== "Medical - Biomedical")
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 12);
-
+        .slice(0, 20);
       const labels = filteredEntries.map(entry => entry[0]);
       const data = filteredEntries.map(entry => entry[1]);
-
+      const colors = data.map((_, i) => colorPalette[i % colorPalette.length]);
       barChart.data.labels = labels;
       barChart.data.datasets[0].data = data;
+      barChart.data.datasets[0].backgroundColor = colors;
       barChart.update();
     }
-
     function updateStatus() {
       const status = document.getElementById('status');
       const rowCount = gridApi.getDisplayedRowCount();
@@ -274,10 +318,15 @@
       if (parts.length > 0) text += ` — ${parts.join(' , ')}`;
       status.textContent = text;
     }
-
     const columnDefs = [
-      { headerName: "Symbol", field: "symbol", width: 100, pinned: 'left', cellStyle: { fontWeight: 'bold' } },
-
+      {
+        headerName: "Symbol",
+        field: "symbol",
+        width: 100,
+        pinned: 'left',
+        cellStyle: { fontWeight: 'bold', cursor: 'pointer' },
+        cellRenderer: params => `<span style="color:#60a5fa;">${params.value || ''}</span>`
+      },
       {
         headerName: "Name",
         field: "name",
@@ -290,11 +339,8 @@
         tooltipField: "name",
         wrapText: true,
         autoHeight: true,
-        cellClassRules: {
-          'neutral': params => params.value === 'N/A' || !params.value
-        }
+        cellClassRules: { 'neutral': params => params.value === 'N/A' || !params.value }
       },
-
       {
         headerName: "F#",
         colId: 'fixedCount',
@@ -303,7 +349,6 @@
         cellStyle: { textAlign: 'center', fontWeight: 'bold', color: '#00d1a0' },
         sortable: true
       },
-
       {
         headerName: "D#",
         colId: 'dynamicCount',
@@ -312,9 +357,39 @@
         cellStyle: { textAlign: 'center', fontWeight: 'bold', color: '#60a5fa' },
         sortable: true
       },
-
-      { headerName: "Product Type", field: "industry", minWidth: 250, flex: 2, filter: 'agTextColumnFilter', floatingFilter: true, wrapText: true, autoHeight: true },
-
+      {
+        headerName: "Product Type",
+        field: "industry",
+        minWidth: 250,
+        flex: 2,
+        filter: 'agTextColumnFilter',
+        floatingFilter: true,
+        wrapText: true,
+        autoHeight: true,
+        cellClassRules: {
+          'neutral': params => !params.value || params.value === 'N/A',
+          'industry-bg-0': params => industryColorMap[params.value] === 0,
+          'industry-bg-1': params => industryColorMap[params.value] === 1,
+          'industry-bg-2': params => industryColorMap[params.value] === 2,
+          'industry-bg-3': params => industryColorMap[params.value] === 3,
+          'industry-bg-4': params => industryColorMap[params.value] === 4,
+          'industry-bg-5': params => industryColorMap[params.value] === 5,
+          'industry-bg-6': params => industryColorMap[params.value] === 6,
+          'industry-bg-7': params => industryColorMap[params.value] === 7,
+          'industry-bg-8': params => industryColorMap[params.value] === 8,
+          'industry-bg-9': params => industryColorMap[params.value] === 9,
+          'industry-bg-10': params => industryColorMap[params.value] === 10,
+          'industry-bg-11': params => industryColorMap[params.value] === 11,
+          'industry-bg-12': params => industryColorMap[params.value] === 12,
+          'industry-bg-13': params => industryColorMap[params.value] === 13,
+          'industry-bg-14': params => industryColorMap[params.value] === 14,
+          'industry-bg-15': params => industryColorMap[params.value] === 15,
+          'industry-bg-16': params => industryColorMap[params.value] === 16,
+          'industry-bg-17': params => industryColorMap[params.value] === 17,
+          'industry-bg-18': params => industryColorMap[params.value] === 18,
+          'industry-bg-19': params => industryColorMap[params.value] === 19
+        }
+      },
       {
         headerName: "Change %",
         field: "percentChange",
@@ -324,13 +399,75 @@
         cellClassRules: { 'positive': p => p.value > 0, 'negative': p => p.value < 0 },
         filter: 'agNumberColumnFilter'
       },
-
       { headerName: "5D %", field: "percentChange5d", width: 100, valueGetter: params => parsePercent(params.data.percentChange5d), valueFormatter: params => params.value == null ? "N/A" : Math.round(params.value) + '%' },
-
-      { headerName: "Cap Category", width: 120, valueGetter: params => getCapCategory(parseMarketCap(params.data.marketCap)), filter: 'agTextColumnFilter' },
-
+      {
+        headerName: "Cap Category",
+        width: 120,
+        valueGetter: params => getCapCategory(parseMarketCap(params.data.marketCap)),
+        filter: 'agTextColumnFilter'
+      },
+      {
+        headerName: "Perf Bars",
+        colId: "perfBars",
+        width: 340,
+        cellRenderer: params => {
+          if (!params.data) return '';
+          const periods = [
+            { key: "percentChange5d", label: "5D" },
+            { key: "percentChange1m", label: "1M" },
+            { key: "percentChange3m", label: "3M" },
+            { key: "percentChange6m", label: "6M" }
+          ];
+          let maxAbs = 1;
+          periods.forEach(p => {
+            const v = parsePercent(params.data[p.key]);
+            if (v !== null) maxAbs = Math.max(maxAbs, Math.abs(v));
+          });
+          const scale = 45 / Math.max(maxAbs, 10);
+          let html = '<div style="position:relative; height:100%; width:100%; display:flex; align-items:center;">';
+          periods.forEach((p, idx) => {
+            const val = parsePercent(params.data[p.key]);
+            if (val === null) return;
+            const absVal = Math.abs(val);
+            const widthPercent = absVal * scale;
+            const color = val >= 0
+              ? (val > 20 ? '#10b981' : val > 5 ? '#34d399' : '#6ee7b7')
+              : (val < -20 ? '#ef4444' : val < -5 ? '#f87171' : '#fca5a5');
+            const textColor = val >= 0 ? '#d1fae5' : '#fee2e2';
+            const leftPos = idx * 25;
+            html += `
+              <div style="
+                position: absolute;
+                left: ${leftPos}%;
+                width: ${widthPercent}%;
+                height: 70%;
+                top: 15%;
+                background: ${color};
+                border-radius: 4px;
+                opacity: 0.75;
+                box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+              "></div>
+              <div style="
+                position: absolute;
+                left: ${leftPos + 1}%;
+                top: 0;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                color: ${textColor};
+                font-size: 11px;
+                font-weight: 600;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+                pointer-events: none;
+              ">${val >= 0 ? '+' : ''}${Math.round(val)}%</div>
+            `;
+          });
+          html += '</div>';
+          return html;
+        },
+        cellStyle: { padding: '0 8px' }
+      },
       { headerName: "Market Cap", field: "marketCap", width: 140 },
-
       {
         headerName: "Earnings",
         field: "nextEarningsDate",
@@ -338,17 +475,21 @@
         comparator: (a, b) => (parseEarningsDate(a) || 0) - (parseEarningsDate(b) || 0)
       }
     ];
-
     const gridOptions = {
       columnDefs: columnDefs,
       rowData: null,
       defaultColDef: { sortable: true, filter: true, resizable: true, floatingFilter: true },
-      animateRows: true
+      animateRows: true,
+      onCellClicked: params => {
+        if (params.column.getColId() === 'symbol' && params.value) {
+          const symbol = params.value.trim().toUpperCase();
+          const tvUrl = `https://www.tradingview.com/chart/?symbol=NASDAQ:${symbol}`;
+          window.open(tvUrl, '_blank');
+        }
+      }
     };
-
     document.addEventListener('DOMContentLoaded', () => {
       Chart.register(ChartDataLabels);
-
       const ctx = document.getElementById('industryBarChart').getContext('2d');
       barChart = new Chart(ctx, {
         type: 'bar',
@@ -357,7 +498,9 @@
           datasets: [{
             label: 'Stocks by Product Type',
             data: [],
-            backgroundColor: '#00d1a0',
+            backgroundColor: [],
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderWidth: 1,
             borderRadius: 4,
             borderSkipped: false
           }]
@@ -368,7 +511,7 @@
           maintainAspectRatio: false,
           scales: {
             x: { grid: { color: '#3d4655' }, ticks: { color: '#9099a8', stepSize: 1 } },
-            y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 11 } } }
+            y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 13 } } }
           },
           plugins: {
             legend: { display: false },
@@ -376,7 +519,7 @@
               color: '#000',
               anchor: 'end',
               align: 'left',
-              font: { weight: 'bold' },
+              font: { weight: 'bold', size: 12 },
               formatter: Math.round
             }
           },
@@ -389,14 +532,11 @@
           }
         }
       });
-
       const gridDiv = document.querySelector('#myGrid');
       gridApi = agGrid.createGrid(gridDiv, gridOptions);
-
       gridApi.addEventListener('filterChanged', updateDynamicCounts);
       gridApi.addEventListener('sortChanged', updateDynamicCounts);
       gridApi.addEventListener('modelUpdated', updateDynamicCounts);
-
       function applyQuickFilter(industry = null) {
         let filterParts = [];
         const activeCap = document.querySelector('.cap-btn.active')?.getAttribute('data-cap') || '';
@@ -404,7 +544,6 @@
         if (industry) filterParts.push(industry);
         gridApi.setGridOption('quickFilterText', filterParts.join(' '));
       }
-
       document.querySelectorAll('.cap-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.cap-btn').forEach(b => b.classList.remove('active'));
@@ -412,7 +551,6 @@
           applyQuickFilter();
         });
       });
-
       document.querySelectorAll('.change-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.change-btn').forEach(b => b.classList.remove('active'));
@@ -428,7 +566,6 @@
           applyQuickFilter();
         });
       });
-
       function loadData(filename) {
         const fullPath = `barchart-stocks-grid/barchart-scraper/${filename}`;
         fetch(fullPath)
@@ -443,7 +580,6 @@
           })
           .catch(err => console.error("Data load error:", err));
       }
-
       const radios = document.querySelectorAll('input[name="dataSource"]');
       radios.forEach(r => r.addEventListener('change', e => { if (e.target.checked) loadData(e.target.value); }));
       loadData(document.querySelector('input[name="dataSource"]:checked').value);
