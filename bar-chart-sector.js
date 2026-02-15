@@ -1,132 +1,118 @@
-// bar-chart-sector.js
 const fs = require('fs');
 const { chromium } = require('playwright');
 const cron = require('node-cron');
 
-// Prevent silent death from unhandled rejections (very important in Node 24+)
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('UNHANDLED REJECTION (this can kill async loops):', reason);
-  // Do NOT exit — keep running
+process.on('unhandledRejection', (reason) => {
+    console.error('UNHANDLED REJECTION:', reason);
 });
 
 console.log(`Scheduler started — ${new Date().toISOString()} — every 15 minutes`);
 
 async function scrapeTarget(target) {
-  console.log(`\n=== TARGET START === ${target.filePath}`);
-  console.log(`URL: ${target.pageUrl}`);
+    console.log(`\n=== TARGET START === ${target.filePath || target.name}`);
+    let browser;
+    let results = [];
+    try {
+        browser = await chromium.launch({ headless: true });
+        const context = await browser.newContext({
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+        });
+        const page = await context.newPage();
+        let captured = false;
 
-  let browser;
-  try {
-    browser = await chromium.launch({
-      headless: false,      // set to true in production
-      slowMo: 50,           // remove or set to 0 later
-      timeout: 120000
-    });
+        await page.route('**/core-api/v1/quotes/get**', async (route) => {
+            const url = new URL(route.request().url());
+            // RESTORED ALL ORIGINAL FIELDS IN THE API REQUEST
+            url.searchParams.set('fields', 'symbol,symbolName,percentChange,industry,percentChange5d,percentChange1m,percentChange3m,percentChange6m,marketCap,nextEarningsDate');
+            url.searchParams.set('max', '100');
+            await route.continue({ url: url.toString() });
+        });
 
-    const page = await browser.newPage();
+        page.on('response', async (response) => {
+            if (response.url().includes('/core-api/v1/quotes/get') && !captured) {
+                try {
+                    const json = await response.json();
+                    if (json.data && json.data.length > 20) {
+                        captured = true;
+                        // RESTORED YOUR ORIGINAL MAPPING LOGIC
+                        results = json.data.map(item => ({
+                            symbol: item.symbol,
+                            name: item.symbolName || item.name || (item.raw?.symbolName || item.raw?.name) || 'N/A',
+                            percentChange: item.percentChange,
+                            industry: item.industry || (item.raw?.industry) || 'N/A',
+                            percentChange5d: item.percentChange5d ?? item.raw?.percentChange5d ?? null,
+                            percentChange1m: item.percentChange1m ?? item.raw?.percentChange1m ?? null,
+                            percentChange3m: item.percentChange3m ?? item.raw?.percentChange3m ?? null,
+                            percentChange6m: item.percentChange6m ?? item.raw?.percentChange6m ?? null,
+                            marketCap: item.marketCap ?? item.raw?.marketCap ?? null,
+                            nextEarningsDate: item.nextEarningsDate ?? item.raw?.nextEarningsDate ?? 'N/A'
+                        }));
+                        console.log(`[DATA] Successfully captured ${results.length} stocks.`);
+                    }
+                } catch (e) {}
+            }
+        });
 
-    let captured = false;
+        await page.goto(target.pageUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await page.waitForSelector('.bc-table-scrollable-inner', { timeout: 15000 }).catch(() => {});
+        await page.evaluate(() => window.scrollBy(0, 600));
 
-    await page.route('**/core-api/v1/quotes/get**', async (route) => {
-      const url = new URL(route.request().url());
-      url.searchParams.set(
-        'fields',
-        'symbol,symbolName,percentChange,industry,percentChange5d,percentChange1m,percentChange3m,percentChange6m,marketCap,nextEarningsDate'
-      );
-      console.log(`[ROUTE] ${url.toString()}`);
-      await route.continue({ url: url.toString() });
-    });
-
-    page.on('response', async (response) => {
-      if (response.url().includes('/core-api/v1/quotes/get') && !captured) {
-        captured = true;
-        try {
-          const json = await response.json();
-          console.log(`[CAPTURED] ${target.filePath} – status ${response.status()}`);
-
-          if (json.data?.length > 0) {
-            console.log(`[KEYS]`, Object.keys(json.data[0]));
-            if (json.data[0].raw) console.log(`[RAW KEYS]`, Object.keys(json.data[0].raw));
-          }
-
-          const simplifiedData = json.data.map(item => ({
-            symbol: item.symbol,
-            name: item.symbolName || item.name || (item.raw?.symbolName || item.raw?.name) || 'N/A',
-            percentChange: item.percentChange,
-            industry: item.industry || (item.raw?.industry) || 'N/A',
-            percentChange5d: item.percentChange5d ?? item.raw?.percentChange5d ?? null,
-            percentChange1m: item.percentChange1m ?? item.raw?.percentChange1m ?? null,
-            percentChange3m: item.percentChange3m ?? item.raw?.percentChange3m ?? null,
-            percentChange6m: item.percentChange6m ?? item.raw?.percentChange6m ?? null,
-            marketCap: item.marketCap ?? item.raw?.marketCap ?? null,
-            nextEarningsDate: item.nextEarningsDate ?? item.raw?.nextEarningsDate ?? 'N/A'
-          }));
-
-          fs.writeFileSync(target.filePath, JSON.stringify(simplifiedData, null, 2));
-          console.log(`[SAVED] ${simplifiedData.length} items → ${target.filePath}`);
-        } catch (e) {
-          console.error(`[PARSE ERROR] ${target.filePath}: ${e.message}`);
+        let waited = 0;
+        while (!captured && waited < 15000) {
+            await new Promise(r => setTimeout(r, 1000));
+            waited += 1000;
         }
-      }
-    });
-
-    console.log(`[GOTO] ${target.pageUrl}`);
-    await page.goto(target.pageUrl, { waitUntil: 'networkidle', timeout: 90000 });
-    console.log(`[LOADED] ${target.pageUrl}`);
-
-    // Trigger scroll if needed
-    await page.evaluate(() => window.scrollBy(0, 2000));
-    await page.waitForTimeout(5000);
-
-    // Wait for capture
-    let waited = 0;
-    const maxWait = 60000;
-    while (!captured && waited < maxWait) {
-      await new Promise(r => setTimeout(r, 500));
-      waited += 500;
+        return results;
+    } catch (err) {
+        console.error(`[ERROR] ${target.name || target.filePath}: ${err.message}`);
+        return [];
+    } finally {
+        if (browser) await browser.close();
     }
-
-    if (!captured) {
-      console.warn(`[NO CAPTURE] ${target.filePath} after ${waited/1000}s`);
-    }
-  } catch (err) {
-    console.error(`[ERROR] ${target.filePath}: ${err.message}`);
-    console.error(err.stack || '');
-  } finally {
-    if (browser) {
-      await browser.close().catch(e => console.log(`[CLOSE] Ignored error: ${e.message}`));
-    }
-    console.log(`=== TARGET END === ${target.filePath}\n`);
-  }
 }
 
 async function runFullCycle() {
-  console.log(`\n=== CYCLE START ${new Date().toISOString()} ===`);
+    console.log(`\n=== CYCLE START ${new Date().toISOString()} ===`);
 
-  const targets = [
-    { pageUrl: 'https://www.barchart.com/stocks/performance/percent-change/advances', filePath: 'todays-percentage-gainers.json' },
-    { pageUrl: 'https://www.barchart.com/stocks/most-active/price-volume-leaders?viewName=139730&orderBy=percentChange&orderDir=desc', filePath: 'large_active_dollarvolume.json' },
-    { pageUrl: 'https://www.barchart.com/stocks/performance/five-day-gainers/advances?viewName=139730&orderBy=percentChange&orderDir=desc', filePath: 'five_day_gainers.json' }
-  ];
+    const singleTargets = [
+        { pageUrl: 'https://www.barchart.com/stocks/performance/percent-change/advances', filePath: 'todays-percentage-gainers.json' },
+        { pageUrl: 'https://www.barchart.com/stocks/most-active/price-volume-leaders?viewName=139730&orderBy=percentChange&orderDir=desc', filePath: 'large_active_dollarvolume.json' }
+    ];
 
-  for (let i = 0; i < targets.length; i++) {
-    console.log(`\n[STEP ${i+1}/${targets.length}]`);
-    await scrapeTarget(targets[i]);
-  }
+    for (const target of singleTargets) {
+        const data = await scrapeTarget(target);
+        if (data.length > 0) {
+            fs.writeFileSync(target.filePath, JSON.stringify(data, null, 2));
+            console.log(`[SAVED] ${target.filePath}`);
+        }
+    }
 
-  console.log(`=== CYCLE COMPLETE ${new Date().toISOString()} ===\n`);
+    const fiveDaySources = [
+        { name: 'Russell 1000', pageUrl: 'https://www.barchart.com/stocks/indices/russell/russell1000?viewName=139730&orderBy=percentChange5d&orderDir=desc' },
+        { name: 'S&P 500', pageUrl: 'https://www.barchart.com/stocks/indices/sp/sp500?viewName=139730&orderBy=percentChange5d&orderDir=desc' },
+        { name: 'Nasdaq 100', pageUrl: 'https://www.barchart.com/stocks/indices/nasdaq/nasdaq100?viewName=139730&orderBy=percentChange5d&orderDir=desc' }
+    ];
+
+    let combinedFiveDay = [];
+    for (const source of fiveDaySources) {
+        const data = await scrapeTarget(source);
+        combinedFiveDay.push(...data);
+    }
+
+    if (combinedFiveDay.length > 0) {
+        const uniqueMap = new Map();
+        combinedFiveDay.forEach(item => uniqueMap.set(item.symbol, item));
+        
+        // Final sort by 5D performance so your list of 233 is ordered by the biggest gainers
+        const finalFiveDay = Array.from(uniqueMap.values())
+            .sort((a, b) => (b.percentChange5d || 0) - (a.percentChange5d || 0));
+        
+        fs.writeFileSync('five_day_gainers.json', JSON.stringify(finalFiveDay, null, 2));
+        console.log(`[SAVED] Combined ${finalFiveDay.length} unique items with full performance history.`);
+    }
+
+    console.log(`=== CYCLE COMPLETE ===\n`);
 }
 
-// Run immediately
-runFullCycle().catch(err => {
-  console.error('Initial cycle crashed:', err);
-});
-
-// Every 15 minutes
-cron.schedule('*/15 * * * *', () => {
-  runFullCycle().catch(err => {
-    console.error('Scheduled cycle crashed:', err);
-  });
-});
-
-console.log("Waiting for next cycle...");
+runFullCycle();
+cron.schedule('*/15 * * * *', runFullCycle);
