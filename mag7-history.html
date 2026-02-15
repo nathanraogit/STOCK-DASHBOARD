@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JAIGURUDEV — Gains & Sentiment Dashboard</title>
+  <style>
+    body {
+      margin: 0; background: #1a212e;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #f1f5f9; overflow-y: auto;
+    }
+    #header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: rgba(30, 41, 59, 0.98);
+      backdrop-filter: blur(12px);
+      padding: 12px 24px; border-bottom: 1px solid #475569;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .header-left, .header-right { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .header-right { justify-content: flex-end; }
+    #nav-center { 
+      position: absolute; left: 50%; transform: translateX(-50%); 
+      display: flex; align-items: center; gap: 16px; 
+    }
+    #tabs-container { display: flex; gap: 4px; background: #334155; padding: 4px; border-radius: 10px; }
+    .tab { padding: 6px 20px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; transition: 0.2s; white-space: nowrap; }
+    .tab.active { background: #7c3aed; color: white; }
+    #market-bar { display: flex; gap: 12px; font-size: 0.72rem; font-weight: 700; background: rgba(51, 65, 85, 0.5); padding: 6px 14px; border-radius: 8px; border: 1px solid #475569; }
+    .m-item { white-space: nowrap; }
+    button, select.input-field, input[type="range"] {
+      padding: 8px 12px; background: #334155; color: #f1f5f9;
+      border: 1px solid #475569; border-radius: 8px; cursor: pointer;
+      font-weight: 600; font-size: 0.8rem;
+    }
+    button.active { background: #7c3aed; color: white !important; }
+    select.input-field { background: #1e293b; color: white; width: 70px; text-align: center; }
+    #btn-favorites, #btn-small, #btn-show-all { color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* New Barchart button style */
+    #btn-barchart {
+      background: #ec4899;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #btn-barchart:hover {
+      background: #db2777;
+      transform: scale(1.04);
+    }
+
+    .filter-group { display: flex; align-items: center; gap: 4px; background: rgba(51, 65, 85, 0.5); padding: 4px; border-radius: 10px; border: 1px solid #475569; flex-wrap: wrap; }
+ 
+    #grid-container {
+      margin-top: 80px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px; padding: 20px;
+    }
+    .section { border-radius: 16px; min-height: 280px; display: flex; flex-direction: column; position: relative; border-width: 2px; border-style: solid; transition: all 0.3s ease; }
+    .theme-0 { background-color: #dbeafe; border-color: #60a5fa; }
+    .theme-1 { background-color: #f3e8ff; border-color: #a855f7; }
+    .theme-2 { background-color: #fce7f3; border-color: #f472b6; }
+    .theme-3 { background-color: #ffedd5; border-color: #fb923c; }
+    .theme-4 { background-color: #fef9c3; border-color: #facc15; }
+    .theme-5 { background-color: #dcfce7; border-color: #4ade80; }
+    .theme-6 { background-color: #ccfbf1; border-color: #2dd4bf; }
+    .theme-7 { background-color: #fae8ff; border-color: #e879f9; }
+    .theme-8 { background-color: #f1f5f9; border-color: #94a3b8; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 0 16px; }
+    .section-label { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; color: #1e293b; letter-spacing: 0.8px; }
+    .focus-btn { background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; color: #1e293b; padding: 2px 6px; cursor: pointer; }
+    .bubble-container { flex-grow: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; padding: 20px; }
+    .bubble {
+      position: relative; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #ffffff; font-weight: 800; background: radial-gradient(circle at 30% 30%, #475569, #1e293b);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2); cursor: pointer;
+    }
+    .bubble.halo { box-shadow: 0 0 15px 5px rgba(167, 139, 250, 0.6), 0 8px 20px rgba(0,0,0,0.3); border: 2px solid rgba(167, 139, 250, 0.8); }
+   
+    .bubble-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: inherit;
+      text-decoration: none;
+      border-radius: 50%;
+    }
+    .bubble-link:hover {
+      opacity: 0.92;
+      transform: scale(1.04);
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+    .symbol { font-size: 1.25rem; line-height: 1; font-weight: 900; }
+    .change { font-size: 1.05rem; font-weight: 900; margin-top: 2px; }
+    .up { color: #4ade80 !important; }
+    .down { color: #fb7185 !important; }
+    .no-data { font-size: 0.75rem; color: #475569; font-weight: 600; }
+    .bubble-tooltip {
+      visibility: hidden; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      background: #334155; color: #f1f5f9; padding: 8px 12px; border-radius: 6px;
+      font-size: 0.8em; line-height: 1.4; white-space: nowrap; z-index: 10; opacity: 0; transition: opacity 0.2s;
+    }
+    .bubble:hover .bubble-tooltip { visibility: visible; opacity: 1; }
+    .bubble-tooltip::after {
+      content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -5px;
+      border: 5px solid transparent; border-bottom-color: #334155;
+    }
+
+    /* Sentiment styles */
+    #sentiment-wrapper { padding: 20px; background: #f5f5f5; }
+    .sentiment-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+    .box { background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.08); position:relative; }
+    .box h1 { background:#1a1a1a; color:#fff; padding:15px; border-radius:10px; text-align:center; margin:-20px -20px 20px -20px; font-size:1.3em; }
+    .box h1 a { color:#fff; text-decoration:none; }
+    .box h1 a:hover { text-decoration:underline; }
+    .sentiment-table { width:100%; border-collapse:collapse; font-size:0.95em; color: #333; }
+    .sentiment-table th, .sentiment-table td { padding:10px; border:1px solid #ddd; text-align:left; vertical-align:top; }
+    .sentiment-table th { background:#f0f0f0; font-weight:bold; }
+    .sentiment-table tr:nth-child(even) { background:#fafafa; }
+    .ticker { font-weight:bold; color:#0066cc; }
+    .highlight { font-weight:bold; }
+    .stars { font-size:1.4em; text-align:center; width:50px; }
+    .stars.gold { color:#ff9900; }
+    .stars.pink { color:#ff1493; font-weight:bold; }
+    .timestamp { position: absolute; bottom:8px; right:12px; font-size:0.8em; color:#666; font-weight:500; }
+    .watchlist-cell { position: relative; cursor: help; }
+    .tooltip { visibility: hidden; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      background: #333; color: #fff; padding: 10px; border-radius: 6px; font-size: 0.9em; line-height: 1.4;
+      width: 300px; z-index: 100; opacity: 0; transition: opacity 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none;
+    }
+    .watchlist-cell:hover .tooltip { visibility: visible; opacity: 1; }
+    .tooltip::after { content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-bottom-color: #333; }
+  </style>
+</head>
+<body>
+<div id="header">
+  <div class="header-left">
+    <button id="btn-short" onclick="setMode('short')">Short-term</button>
+    <button id="btn-long" class="active" onclick="setMode('long')">Long-term</button>
+    <button id="btn-historical" onclick="setMode('historical')">Historical</button>
+    <div class="filter-group">
+      <button id="btn-toggle-pos" class="active" onclick="setFilterMode('pos')">+</button>
+      <input type="range" id="pos-threshold" min="0" max="20" step="0.5" value="1" onchange="updateThresholdDisplay(); initBubbles()">
+      <span id="pos-value">1</span>
+      <button id="btn-toggle-neg" onclick="setFilterMode('neg')">-</button>
+      <input type="range" id="neg-threshold" min="0" max="20" step="0.5" value="1" onchange="updateThresholdDisplay(); initBubbles()">
+      <span id="neg-value">1</span>
+      <button id="btn-favorites" onclick="setFilterMode('fav')">FAV</button>
+      <button id="btn-small" onclick="setFilterMode('small')">SMALL</button>
+      <button id="btn-show-all" onclick="setFilterMode('all')">ALL</button>
+    </div>
+  </div>
+
+  <div id="nav-center">
+    <div id="tabs-container">
+      <div id="tab-all" class="tab active" onclick="switchTab('all')">All Sectors</div>
+      <div id="tab-semis" class="tab" onclick="switchTab('semis')">Semis</div>
+      <div id="tab-others" class="tab" onclick="switchTab('others')">Others</div>
+    </div>
+
+    <div id="market-bar">
+      <div class="m-item">QQQ: <span id="m-QQQ">...</span></div>
+      <div class="m-item">BTC: <span id="m-BTC-USD">...</span></div>
+      <div class="m-item">GOLD: <span id="m-GC=F">...</span></div>
+    </div>
+
+    <!-- Barchart Grid button added here -->
+    <button id="btn-barchart" onclick="window.open('http://localhost:3000/barchart-stocks-grid', '_blank')">
+      Barchart Grid →
+    </button>
+  </div>
+
+  <div class="header-right">
+    <span id="status">INIT...</span>
+    <div id="timeframe-group"></div>
+  </div>
+</div>
+
+<div id="grid-container"></div>
+
+<div id="sentiment-wrapper">
+  <div class="sentiment-container">
+    <div class="box"><h1><a href="https://api.stocktwits.com/api/2/trending/symbols.json" target="_blank">StockTwits Trending</a></h1><div id="trending">Loading...</div></div>
+    <div class="box"><h1><a href="https://yolostocks.live/#top-by-time" target="_blank">r/wallstreetbets</a></h1><div id="wsb">Loading...</div><div class="timestamp" id="refresh-time">—</div></div>
+    <div class="box"><h1><a href="https://yolostocks.live/#top-by-time" target="_blank">r/pennystocks</a></h1><div id="penny">Loading...</div></div>
+    <div class="box"><h1><a href="https://www.thestockcatalyst.com/NYSEPMMovers" target="_blank">NYSE Premarket Gainers</a></h1><div id="movers">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// CORE LOGIC & CONSTANTS
+// ──────────────────────────────────────────────
+const PROXY = "https://corsproxy.io/?";
+const MARKETS = ["QQQ", "IWM", "BTC-USD", "GC=F", "TLT"];
+const colors = ['#FFFF99','#FFCC99','#FF9999','#99FF99','#99CCFF','#CC99FF','#FFFFCC','#FFCCCC','#CCFFCC','#CCCCFF'];
+let filterMode = 'pos', focusedSectionTitle = null, currentTab = 'all', currentMode = "long", currentView = "1d", priceCache = {};
+
+const sectionData = [
+  { title: "MAG 7 / BIG TECH", items: ["QQQ" , "NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA"], cat: "semis", group: 0 },
+  { title: "SEMI PHOTONICS - OPTICAL", items: ["AXTI" , "AAOI", "LITE", "COHR", "CIEN", "IPGP", "QCLS", "POET", "LPTH" ,"ANET"], cat: "semis", group: 3 },
+  { title: "SEMI- BASIC", items: ["NBIS", "CRWV", "AMD", "AMAT", "VRT", "ANET", "CLS", "LRCX", "KLAC", "ALAB", "ARM", "AEHR","ASML", "AMAT", "TSM"], cat: "semis", group: 3 },
+  { title: "STORAGE SEMIS", items: ["STX", "WDC", "SNX", "PSTG", "DELL", "OUST", "KXIAY"], cat: "semis", group: 3 },
+  { title: "SEMI -MORE & testing", items: ["AEHR", "COHU", "FORM" , "AMKR" , "LSCC","UCTT"], cat: "semis", group: 3 },
+  { title: "SATELLITE - SPACE", items: ["SATL", "RDW", "RKLB", "ASTS", "SATS", "OSS", "PL", "ARKX", "VSAT"], cat: "others", group: 2 },
+  { title: "AI ENERGY Block", items: ["IREN", "CIFR", "ASTS", "GLXY", "WULF"], cat: "semis", group: 1 },
+  { title: "ENERGY", items: ["OKLO", "GEV", "CCJ", "UEC", "CEG", "TLN", "NRG", "VST", "LEU"], cat: "semis", group: 4 },
+  { title: "RENEWABLE / SOLAR", items: ["EOSE", "BE", "CLSK", "LNG", "ENPH", "SO", "HCC","FLSR", "NXT" , "RUN" ], cat: "semis", group: 4 },
+  { title: "DEFENSE WAR", items: ["ONDS", "CDRE", "VVX", "DCO", "AVAV", "KTOS", "KRKNF", "LTRX", "FLTCF", "KXIAY", "LASR"], cat: "others", group: 5 },
+  { title: "DRONE TECHNOLOGY", items: ["RCAT", "UAVS", "UMAC", "ACHR", "AIRO", "JOBY", "UFO", "LHX"], cat: "others", group: 5 },
+  { title: "ROBOTICS", items: ["TER", "RZLV", "MBOT", "RR"], cat: "semis", group: 6 },
+  { title: "AI AGENT", items: ["FLNC", "PATH", "ZETA", "DOCN", "QCLS", "POET"], cat: "semis", group: 6 },
+  { title: "SOFTWARE", items: ["ADP", "CRM", "PLTR", "NOW", "ADBE", "SNOW", "INTU", "NET", "DOCN", "SAP"], cat: "others", group: 7 },
+  { title: "Semi Analog", items: [ "TXN", "ADI", "ON", "ALGM", "MCHP"], cat: "others", group: 3 },
+  { title: "RARE EARTH METALS", items: ["UUUU", "UEC", "AREC", "REMX", "NB", "LAC", "CRML"], cat: "others", group: 8 },
+  { title: "METALS", items: ["ALM", "PALL", "SLV", "COPX", "GLD", "PPLT", "AA", "UAMY", "METC"], cat: "others", group: 8 },
+  { title: "US MINING", items: ["AG", "NEM", "HYMC", "OILU", "GDX", "HL", "GDXJ", "PAAS", "FCX", "EXK"], cat: "others", group: 8 },
+  { title: "BIO", items: ["ABVX", "VKTX", "NKTR", "BEAM", "NTLA", "TLRY", "PRME", "QURE", "TENX", "SLNO", "HROW", "IBRX", "TMDX", "TWST", "TEM", "CRSP", "MNMD", "OCGN", "KROS", "AXSM"], cat: "others", group: 0 },
+  { title: "SEMI High INSTITUTIONAL Ownership", items: ["LSCC", "ALGM", "MTSI", "SLAB", "CRDO", "AMKR", "COHR", "ON", "MCHP", "AAOI", "FORM", "POET", "LASR"], cat: "semis", group: 3 },
+  { title: "ENERGY SMALL CAPS – High Inst. Ownership", items: ["CLSK", "IREN", "WULF", "CIFR", "LEU", "UEC", "HCC", "CCJ"], cat: "energy_small", group: 0 }
+];
+
+const favorites = ["KXIAY","NVDA", "MU", "WDC", "NBIS", "IREN", "LITE", "AAOI", "RDW", "ASTS", "ONDS", "KTOS", "UMAC", "RCAT", "GEV", "EOSE", "BE", "CRWV", "LRCX", "VRT", "QCLS", "CIFR", "WULF", "RR", "EWY","PLTR"];
+const smallCollection = ["POET", "AAOI", "QCLS", "LASR", "KXIAY", "LPTH", "FORM", "LSCC", "UMAC", "RCAT", "JOBY", "RR", "DOCN"].map(s => s.toUpperCase());
+
+// ──────────────────────────────────────────────
+// FUNCTIONS
+// ──────────────────────────────────────────────
+function setFilterMode(m) {
+  filterMode = m;
+  document.querySelectorAll('.filter-group button').forEach(b => b.classList.remove('active'));
+  if (m === 'pos') document.getElementById('btn-toggle-pos').classList.add('active');
+  if (m === 'neg') document.getElementById('btn-toggle-neg').classList.add('active');
+  if (m === 'fav') document.getElementById('btn-favorites').classList.add('active');
+  if (m === 'small') document.getElementById('btn-small').classList.add('active');
+  if (m === 'all') document.getElementById('btn-show-all').classList.add('active');
+  initBubbles();
+}
+
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${t}`).classList.add('active');
+  initBubbles();
+}
+
+function toggleFocus(t) {
+  focusedSectionTitle = (focusedSectionTitle === t) ? null : t;
+  initBubbles();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('#btn-short, #btn-long, #btn-historical').forEach(b => b.classList.remove('active'));
+  document.getElementById(`btn-${mode}`).classList.add('active');
+  if (mode === 'short') currentView = '30m';
+  else if (mode === 'long') currentView = '1d';
+  else if (mode === 'historical') currentView = '1m';
+  fetchAllData();
+}
+
+function updateTimeframeButtons() {
+  const group = document.getElementById("timeframe-group"); group.innerHTML = "";
+  let views;
+  if (currentMode === 'short') views = ["10m", "15m", "30m", "1h"];
+  else if (currentMode === 'long') views = ["1d", "3d", "5d", "10d"];
+  else views = ["1w", "1m", "3m", "6m"];
+  views.forEach(v => {
+    const btn = document.createElement("button");
+    btn.textContent = v;
+    if (v === currentView) btn.classList.add("active");
+    btn.onclick = () => { currentView = v; updateTimeframeButtons(); initBubbles(); };
+    group.appendChild(btn);
+  });
+}
+
+function updateThresholdDisplay() {
+  document.getElementById('pos-value').innerText = document.getElementById('pos-threshold').value;
+  document.getElementById('neg-value').innerText = document.getElementById('neg-threshold').value;
+}
+
+async function fetchAllData() {
+  document.getElementById('status').innerText = "SYNC...";
+  const symbols = [...new Set([...sectionData.flatMap(s => s.items), ...MARKETS])];
+  let range, interval;
+  if (currentMode === 'short') { range = '1d'; interval = '5m'; }
+  else if (currentMode === 'long') { range = '1mo'; interval = '1d'; }
+  else { range = '1y'; interval = '1d'; }
+
+  for (let i = 0; i < symbols.length; i += 10) {
+    const batch = symbols.slice(i, i + 10);
+    await Promise.all(batch.map(async (s) => {
+      try {
+        const url = `${PROXY}${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${s}?range=${range}&interval=${interval}`)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const data = json.chart.result[0];
+        const prices = data.indicators.quote[0].close.filter(v => v != null);
+        const currentPrice = data.meta.regularMarketPrice || prices[prices.length - 1];
+      let prevClose = data.meta.previousClose;
+if (!prevClose && prices.length > 1) {
+  prevClose = prices[prices.length - 2];  // yesterday's close if available
+} else if (!prevClose) {
+  prevClose = prices[0];  // fallback
+}
+        priceCache[s] = { current: currentPrice, history: prices, daily: ((currentPrice - prevClose)/prevClose)*100 };
+
+        const marketEl = document.getElementById(`m-${s}`);
+        if (marketEl) {
+          const val = priceCache[s].daily;
+          marketEl.innerHTML = `<span class="${val >= 0 ? 'up':'down'}">${val > 0 ? '+' : ''}${val.toFixed(2)}%</span>`;
+        }
+      } catch (e) {}
+    }));
+  }
+
+  document.getElementById('status').innerText = "LIVE";
+  updateTimeframeButtons();
+  initBubbles();
+  loadSentimentData();
+}
+
+function getPctChange(s) {
+  const d = priceCache[s]; 
+  if (!d || !d.history.length) return 0;
+  const map = {
+    "10m":2, "15m":3, "30m":6, "1h":12,
+    "1d":1, "3d":3, "5d":5, "10d":10,
+    "1w":5, "1m":21, "3m":63, "6m":126
+  };
+  const offset = map[currentView] || 1;
+  const idx = d.history.length - offset - 1;
+  const old = (idx >= 0 ? d.history[idx] : d.history[0]) || d.current;
+  return ((d.current - old) / old) * 100;
+}
+
+
+function initBubbles() {
+  const container = document.getElementById("grid-container");
+  container.innerHTML = "";
+  const pT = parseFloat(document.getElementById("pos-threshold").value) || 0;
+  const nT = parseFloat(document.getElementById("neg-threshold").value) || 0;
+
+  sectionData.forEach(section => {
+    if (focusedSectionTitle && section.title !== focusedSectionTitle) return;
+    if (!focusedSectionTitle && currentTab !== 'all' && section.cat !== currentTab) return;
+
+    let filteredItems = section.items.map(s => ({ symbol: s.toUpperCase(), pct: getPctChange(s) }));
+
+    if (filterMode === 'small') {
+      filteredItems = filteredItems.filter(b => smallCollection.includes(b.symbol));
+    } else if (filterMode === 'fav') {
+      filteredItems = filteredItems.filter(b => favorites.includes(b.symbol));
+    }
+
+    filteredItems = filteredItems.filter(b => {
+      if (filterMode === 'pos') return b.pct >= pT;
+      if (filterMode === 'neg') return b.pct <= -nT;
+      return true;
+    }).sort((a,b) => b.pct - a.pct);
+
+    if (filteredItems.length === 0 && !focusedSectionTitle) return;
+
+    const secEl = document.createElement("div");
+    secEl.className = `section theme-${section.group}`;
+    secEl.innerHTML = `<div class="section-header"><div class="section-label">${section.title}</div><button class="focus-btn" onclick="toggleFocus('${section.title}')">⛶</button></div><div class="bubble-container"></div>`;
+    const box = secEl.querySelector(".bubble-container");
+
+    if (filteredItems.length === 0) {
+      box.innerHTML = `<div class="no-data">${filterMode === 'small' ? 'No Small List Tickers Match' : 'No Tickers Match'}</div>`;
+    } else {
+      filteredItems.forEach((b, index) => {
+        const size = Math.min(80 + (Math.abs(b.pct) * 8), 150);
+        const el = document.createElement("div");
+        el.className = index < 2 ? "bubble halo" : "bubble";
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+
+        const isFav = favorites.includes(b.symbol);
+        const favStyle = isFav ? 'style="color: #38bdf8; text-decoration: underline;"' : '';
+
+        let bubbleHtml = `
+          <a href="https://www.tradingview.com/chart/?symbol=${b.symbol}" target="_blank" class="bubble-link">
+            <div class="symbol" ${favStyle}>${b.symbol.split('-')[0]}</div>
+            <div class="change ${b.pct >= 0 ? 'up' : 'down'}">${b.pct > 0 ? '+' : ''}${b.pct.toFixed(1)}%</div>
+          </a>
+        `;
+
+        // ──────────────────────────────────────────────
+        // Historical tooltip — now shown for ALL modes (if data exists)
+        // ──────────────────────────────────────────────
+        const d = priceCache[b.symbol];
+        if (d && d.history && d.history.length > 1) {
+          // Periods that work well with both 1mo (long-term default) and 1y (historical)
+          const periods = [
+            { label: "1d",   days: 1   },
+            { label: "3d",   days: 3   },
+            { label: "5d",   days: 5   },
+            { label: "10d",  days: 10  },
+            { label: "1m",   days: 21  }   // ~1 month of trading days
+          ];
+
+          // In historical mode we can show longer periods too
+          if (currentMode === 'historical') {
+            periods.push(
+              { label: "3m", days: 63  },
+              { label: "6m", days: 126 }
+            );
+          }
+
+          const tooltipLines = periods.map(({ label, days }) => {
+            const offset = days;
+            const idx = d.history.length - offset - 1;
+            if (idx < 0) return `<span>${label}: —</span>`;
+
+            const oldPrice = d.history[idx] || d.current;
+            const changePct = ((d.current - oldPrice) / oldPrice) * 100;
+            const sign = changePct > 0 ? '+' : '';
+            const colorStyle = changePct >= 0 ? 'color:#4ade80;' : 'color:#fb7185;';
+
+            // Highlight the currently selected timeframe
+            const isCurrent = currentView === label;
+            const bold = isCurrent ? 'font-weight:bold;' : '';
+
+            return `<span style="${bold}${colorStyle}">${label}: ${sign}${changePct.toFixed(1)}%</span>`;
+          });
+
+          bubbleHtml += `
+            <div class="bubble-tooltip" style="white-space: nowrap; min-width: 120px;">
+              ${tooltipLines.join('<br>')}
+            </div>
+          `;
+        }
+
+        el.innerHTML = bubbleHtml;
+        box.appendChild(el);
+      });
+    }
+
+    container.appendChild(secEl);
+  });
+}
+
+
+// ──────────────────────────────────────────────
+// SENTIMENT WIDGET FUNCTIONS
+// ──────────────────────────────────────────────
+function getCSTTime() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const cst = new Date(utc - 3600000 * 6);
+  return cst.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true});
+}
+
+function updateTimestamp() {
+  document.getElementById('refresh-time').textContent = getCSTTime();
+}
+
+async function loadSentimentData() {
+  ['trending','wsb','penny','movers'].forEach(id => document.getElementById(id).innerHTML = 'Loading...');
+  try {
+    const data = await fetch(PROXY + encodeURIComponent('https://api.stocktwits.com/api/2/trending/symbols.json')).then(r => r.json());
+    let html = `<table class="sentiment-table"><thead><tr><th>#</th><th>Ticker</th><th>Stars</th><th>Watchlist</th></tr></thead><tbody>`;
+    data.symbols.slice(0,15).forEach((s, i) => {
+      const sym = s.symbol.replace('$','').toUpperCase();
+      const watchlist = (s.watchlist_count || 0).toLocaleString();
+      const summary = s.trends?.summary || 'No summary';
+      html += `<tr data-symbol="${sym}">
+        <td>${i+1}</td>
+        <td class="ticker">${sym}</td>
+        <td class="stars gold" id="stars-${sym}-1"></td>
+        <td class="watchlist-cell">${watchlist}
+          <div class="tooltip">${summary.replace(/\n/g, '<br>')}</div>
+        </td>
+      </tr>`;
+    });
+    document.getElementById('trending').innerHTML = html + '</tbody></table>';
+  } catch { document.getElementById('trending').innerHTML = '<p style="color:red">Failed</p>'; }
+
+  await Promise.allSettled([loadWSB(), loadPenny(), loadMovers()]);
+  applyColorsAndStars();
+  updateTimestamp();
+}
+
+async function loadWSB() {
+  try {
+    const text = await fetch(PROXY + encodeURIComponent('https://yolostocks.live/downloads/wallstreetbets.csv')).then(r => r.text());
+    const lines = text.trim().split('\n').slice(1);
+    let html = `<table class="sentiment-table"><thead><tr><th>#</th><th>Ticker</th><th>Stars</th></tr></thead><tbody>`;
+    lines.slice(0,15).forEach((l,i) => {
+      const t = l.split(',')[0].replace(/"/g,'').trim().toUpperCase();
+      if (t) html += `<tr data-symbol="${t}"><td>${i+1}</td><td class="ticker">${t}</td><td class="stars gold" id="stars-${t}-2"></td></tr>`;
+    });
+    document.getElementById('wsb').innerHTML = html + '</tbody></table>';
+  } catch { document.getElementById('wsb').innerHTML = 'Failed'; }
+}
+
+async function loadPenny() {
+  try {
+    const text = await fetch(PROXY + encodeURIComponent('https://yolostocks.live/downloads/pennystocks.csv')).then(r => r.text());
+    const lines = text.trim().split('\n').slice(1);
+    let html = `<table class="sentiment-table"><thead><tr><th>#</th><th>Ticker</th><th>Stars</th></tr></thead><tbody>`;
+    lines.slice(0,15).forEach((l,i) => {
+      const t = l.split(',')[0].replace(/"/g,'').trim().toUpperCase();
+      if (t) html += `<tr data-symbol="${t}"><td>${i+1}</td><td class="ticker">${t}</td><td class="stars gold" id="stars-${t}-3"></td></tr>`;
+    });
+    document.getElementById('penny').innerHTML = html + '</tbody></table>';
+  } catch { document.getElementById('penny').innerHTML = 'Failed'; }
+}
+
+async function loadMovers() {
+  try {
+    const htmlText = await fetch(PROXY + encodeURIComponent('https://www.thestockcatalyst.com/NYSEPMMovers')).then(r => r.text());
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+    const rows = [...doc.querySelectorAll('tbody tr')].filter(r => r.cells[0] && !r.cells[0].textContent.trim().startsWith('-')).slice(0,10);
+    let out = `<table class="sentiment-table"><thead><tr><th>#</th><th>Ticker</th><th>Headlines</th></tr></thead><tbody>`;
+    rows.forEach((r,i) => {
+      const sym = r.cells[2]?.textContent.trim().toUpperCase() || '';
+      const news = r.cells[5]?.innerHTML.replace(/<br>/g,' • ').replace(/<[^>]+>/g,'') || '—';
+      out += `<tr data-symbol="${sym}"><td>${i+1}</td><td class="ticker">${sym}</td><td style="font-size:0.9em">${news}</td></tr>`;
+    });
+    document.getElementById('movers').innerHTML = out + '</tbody></table>';
+  } catch { document.getElementById('movers').innerHTML = 'Failed'; }
+}
+
+function applyColorsAndStars() {
+  document.querySelectorAll('.ticker').forEach(c => { c.style.backgroundColor = ''; c.classList.remove('highlight'); });
+  document.querySelectorAll('.stars').forEach(s => { s.textContent = ''; s.className = 'stars gold'; });
+
+  const countInFirstThree = {};
+  ['trending','wsb','penny'].forEach(id => {
+    document.querySelectorAll(`#${id} tr[data-symbol]`).forEach(tr => {
+      const sym = tr.getAttribute('data-symbol');
+      if (sym) countInFirstThree[sym] = (countInFirstThree[sym] || 0) + 1;
+    });
+  });
+
+  const totalCount = {};
+  document.querySelectorAll('tr[data-symbol]').forEach(tr => {
+    const sym = tr.getAttribute('data-symbol');
+    if (sym) totalCount[sym] = (totalCount[sym] || 0) + 1;
+  });
+
+  Object.keys(totalCount).filter(s => totalCount[s] > 1).forEach((sym, i) => {
+    const color = colors[i % colors.length];
+    document.querySelectorAll(`tr[data-symbol="${sym}"] .ticker`).forEach(cell => {
+      cell.style.backgroundColor = color;
+      cell.classList.add('highlight');
+    });
+  });
+
+  Object.keys(countInFirstThree).forEach(sym => {
+    const inFirstThree = countInFirstThree[sym];
+    const alsoInMovers = totalCount[sym] > inFirstThree;
+    let stars = '';
+    let isPink = false;
+    if (inFirstThree === 3) { stars = '★★★'; isPink = true; }
+    else if (inFirstThree === 2) stars = '★★';
+    else if (inFirstThree === 1 && alsoInMovers) stars = '★';
+
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById(`stars-${sym}-${i}`);
+      if (el) {
+        el.textContent = stars;
+        el.className = isPink ? 'stars pink' : 'stars gold';
+      }
+    }
+  });
+}
+
+// Initial Boot
+updateThresholdDisplay();
+fetchAllData();
+setInterval(fetchAllData, 600000); // 10 min refresh
+</script>
+</body>
+</html>

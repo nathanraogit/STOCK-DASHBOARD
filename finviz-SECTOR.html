@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sector Performance Chart</title>
+    <!-- Highcharts and jQuery from CDN -->
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <style>
+        body {
+            background: transparent;
+            color: #fcbe24;
+            padding: 0 24px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        #controls {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        #controls label {
+            margin-right: 20px;
+            cursor: pointer;
+        }
+        #container {
+            width: 1400px;
+            height: 900px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <strong>Sort by:</strong>
+        <label><input type="radio" name="sort" value="week" checked> Weekly</label>
+        <label><input type="radio" name="sort" value="today"> Daily</label>
+    </div>
+    <div id="container"></div>
+
+    <script>
+        let chart;
+        let rawData = [];
+
+        // Load the external JSON file
+        fetch('barchart-stocks-grid/barchart-scraper/finviz_industry_performance.json')
+            .then(response => response.json())
+            .then(data => {
+                rawData = data;
+
+                // Initial render (weekly sort)
+                renderChart('week');
+
+                // Radio button change handler
+                document.querySelectorAll('input[name="sort"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        renderChart(this.value);
+                    });
+                });
+            })
+            .catch(error => console.error('Error loading finviz_industry_performance.json.json:', error));
+
+        function renderChart(sortBy) {
+            let sortedData = [...rawData];
+
+            if (sortBy === 'week') {
+                sortedData.sort((a, b) => b.perfW - a.perfW);
+            } else if (sortBy === 'today') {
+                sortedData.sort((a, b) => b.perfT - a.perfT);
+            }
+
+            // Take top 45 sectors
+            const topData = sortedData.slice(0, 25);
+
+            const categories = topData.map(item => item.label);
+
+            // Round all values to whole numbers
+            const todayData = topData.map(item => Math.round(item.perfT));
+            const weekData = topData.map(item => Math.round(item.perfW));
+            const monthData = topData.map(item => Math.round(item.perfM));
+            const quarterData = topData.map(item => Math.round(item.perfQ));
+
+            // Positive values for stacking on right side only
+            const todayPositive = todayData.map(v => Math.abs(v));
+            const weekPositive = weekData.map(v => Math.abs(v));
+            const monthPositive = monthData.map(v => Math.abs(v));
+            const quarterPositive = quarterData.map(v => Math.abs(v));
+
+            const newOptions = {
+                chart: {
+                    type: 'bar',
+                    width: 1400,
+                    height: 900,
+                    marginTop: 75,
+                    marginBottom: 75
+                },
+                title: {
+                    text: sortBy === 'week' 
+                        ? 'Gains per Sector (Top 45 by Weekly Performance)' 
+                        : 'Gains per Sector (Top 45 by Daily Performance)',
+                    style: { color: '#fcbe24' }
+                },
+                xAxis: {
+                    categories: categories,
+                    title: { text: 'Sector' },
+                    labels: {
+                        style: {
+                            fontSize: '15px',
+                            color: '#fcbe24',
+                            fontWeight: 'bold'
+                        }
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: { text: 'Performance (%)' },
+                    labels: {
+                        formatter: function () {
+                            return this.value + '%';
+                        }
+                    }
+                },
+                tooltip: {
+                    pointFormatter: function () {
+                        const originalValue = this.series.userOptions.originalData[this.point.index];
+                        return '<span style="color:' + this.series.color + '">' + this.series.name + '</span>: <b>' + originalValue + '%</b><br/>';
+                    }
+                },
+                legend: {
+                    enabled: true,
+                    reversed: true
+                },
+                plotOptions: {
+                    series: {
+                        stacking: 'normal',
+                        pointPadding: 0,
+                        groupPadding: 0
+                    }
+                },
+                series: [
+                    {
+                        name: 'Quarter',
+                        data: quarterPositive,
+                        originalData: quarterData,
+                        dataLabels: {
+                            enabled: true,
+                            inside: true,
+                            formatter: function () {
+                                const val = this.series.userOptions.originalData[this.point.index];
+                                if (val === 0) return '';
+                                const sign = val > 0 ? '+' : '';
+                                const color = val < 0 ? 'black' : 'white';
+                                return '<span style="color:' + color + '">' + sign + val + '%</span>';
+                            },
+                            style: { fontSize: '13px', fontWeight: 'bold', textOutline: '1px black' },
+                            useHTML: true
+                        }
+                    },
+                    {
+                        name: 'Month',
+                        data: monthPositive,
+                        originalData: monthData,
+                        dataLabels: { /* same as above */ 
+                            enabled: true,
+                            inside: true,
+                            formatter: function () {
+                                const val = this.series.userOptions.originalData[this.point.index];
+                                if (val === 0) return '';
+                                const sign = val > 0 ? '+' : '';
+                                const color = val < 0 ? 'black' : 'white';
+                                return '<span style="color:' + color + '">' + sign + val + '%</span>';
+                            },
+                            style: { fontSize: '13px', fontWeight: 'bold', textOutline: '1px black' },
+                            useHTML: true
+                        }
+                    },
+                    {
+                        name: 'Week',
+                        data: weekPositive,
+                        originalData: weekData,
+                        dataLabels: { /* same */ 
+                            enabled: true,
+                            inside: true,
+                            formatter: function () {
+                                const val = this.series.userOptions.originalData[this.point.index];
+                                if (val === 0) return '';
+                                const sign = val > 0 ? '+' : '';
+                                const color = val < 0 ? 'black' : 'white';
+                                return '<span style="color:' + color + '">' + sign + val + '%</span>';
+                            },
+                            style: { fontSize: '13px', fontWeight: 'bold', textOutline: '1px black' },
+                            useHTML: true
+                        }
+                    },
+                    {
+                        name: 'Today',
+                        data: todayPositive,
+                        originalData: todayData,
+                        dataLabels: {
+                            enabled: true,
+                            inside: true,
+                            formatter: function () {
+                                const val = this.series.userOptions.originalData[this.point.index];
+                                if (val === 0) return '';
+                                const sign = val > 0 ? '+' : '';
+                                const color = val < 0 ? 'black' : 'white';
+                                return '<span style="color:' + color + '">' + sign + val + '%</span>';
+                            },
+                            style: { fontSize: '13px', fontWeight: 'bold', textOutline: '1px black' },
+                            useHTML: true
+                        }
+                    }
+                ]
+            };
+
+            if (chart) {
+                chart.update(newOptions, true);
+            } else {
+                chart = Highcharts.chart('container', newOptions);
+            }
+        }
+    </script>
+</body>
+</html>

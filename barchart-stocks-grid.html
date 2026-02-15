@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barchart Stocks Grid</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.1.0/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.1.0/styles/ag-theme-alpine-dark.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --bg-main: #0b0e14;
+    --bg-sidebar: #151921;
+    --bg-card: #1c222d;
+    --accent: #00d1a0;
+    --negative: #ff5266;
+    --text-primary: #ffffff;
+    --text-secondary: #9099a8;
+    --border-color: #3d4655;
+    --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+  .main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 1px;
+    background-color: var(--border-color);
+  }
+  .grid-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-main);
+  }
+  #myGrid {
+    flex: 1;
+    width: 100%;
+  }
+  .sidebar {
+    width: 450px;
+    background-color: var(--bg-sidebar);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    border-left: 1px solid var(--border-color);
+  }
+  .chart-container {
+    height: 350px;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .controls, .cap-filter, .change-filter {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+  .section-title {
+    color: var(--text-secondary);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 15px;
+    font-weight: 800;
+  }
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-item {
+    font-size: 13px; background: var(--bg-card); padding: 10px 14px;
+    border-radius: 6px; border: 1px solid transparent; cursor: pointer;
+  }
+  .radio-item input[type="radio"] { margin-right: 12px; accent-color: var(--accent); }
+  .cap-buttons, .change-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 6px; }
+  .cap-btn, .change-btn {
+    padding: 8px 0; border-radius: 4px; text-align: center; cursor: pointer;
+    font-weight: 700; font-size: 11px; background: var(--bg-card);
+    border: 1px solid var(--border-color); color: var(--text-secondary);
+  }
+  .cap-btn.active, .change-btn.active { background: var(--accent) !important; color: #000 !important; }
+  .ag-theme-alpine-dark {
+    --ag-background-color: var(--bg-main);
+    --ag-header-background-color: var(--bg-sidebar);
+    --ag-border-color: var(--border-color);
+    --ag-header-foreground-color: #ffffff;
+    --ag-data-color: #ffffff;
+    --ag-font-size: 13px;
+  }
+  .ag-row { color: #ffffff !important; }
+  .ag-header-cell-label { justify-content: center; font-weight: 800 !important; text-transform: uppercase; color: #ffffff !important; }
+  .ag-cell[col-id="symbol"] { color: #ffffff !important; font-weight: 800 !important; font-family: var(--font-mono); }
+  .ag-cell[col-id="name"]   { font-weight: 500; color: #e2e8f0; }
+  .ag-cell[col-id="industry"] { color: #cbd5e0 !important; }
+  .ag-floating-filter-input { background-color: #2d343f !important; border: 1px solid var(--border-color) !important; }
+  .ag-floating-filter-input input { color: #ffffff !important; }
+  .ag-popup, .ag-menu, .ag-filter-wrapper, .ag-picker-field-wrapper, .ag-list-item {
+    background-color: #1c222d !important;
+    border: 1px solid var(--accent) !important;
+    color: #ffffff !important;
+  }
+  .ag-list-item-label, .ag-select-list-item, .ag-picker-field-display { color: #ffffff !important; }
+  .ag-list-item:hover, .ag-select-list-item:hover, .ag-menu-option-active { background-color: var(--accent) !important; color: #000000 !important; }
+  .positive { color: var(--accent) !important; font-weight: 700; }
+  .negative { color: var(--negative) !important; font-weight: 700; }
+  .neutral { color: #6b7280 !important; font-style: italic; }
+ 
+  .status { padding: 12px 20px; font-size: 11px; font-family: var(--font-mono); background: var(--bg-card); color: var(--text-secondary); border-top: 1px solid var(--border-color); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-main); }
+  ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; border: 2px solid var(--bg-main); }
+</style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="grid-container">
+      <div id="myGrid" class="ag-theme-alpine-dark"></div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="sidebar">
+      <div class="section-title">Product Type Concentration</div>
+      <div class="chart-container">
+        <canvas id="industryBarChart"></canvas>
+      </div>
+      <div class="controls">
+        <div class="section-title">Data Source 2026</div>
+        <div class="radio-group">
+          <div class="radio-item">
+            <input type="radio" id="todays" name="dataSource" value="todays-percentage-gainers.json" checked>
+            <label for="todays">Today's % Gainers</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="dollar" name="dataSource" value="large_active_dollarvolume.json">
+            <label for="dollar">Large Active $ Volume</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="five" name="dataSource" value="five_day_gainers.json">
+            <label for="five">5-Day Gainers</label>
+          </div>
+        </div>
+      </div>
+      <div class="cap-filter">
+        <div class="section-title">Cap Category Quick Filter</div>
+        <div class="cap-buttons">
+          <div class="cap-btn all active" data-cap="">All</div>
+          <div class="cap-btn small" data-cap="Small">S</div>
+          <div class="cap-btn mid" data-cap="Mid">M</div>
+          <div class="cap-btn large" data-cap="Large">L</div>
+          <div class="cap-btn mega" data-cap="Mega">M</div>
+        </div>
+      </div>
+      <div class="change-filter">
+        <div class="section-title">Today's Change % Quick Filter</div>
+        <div class="change-buttons">
+          <div class="change-btn all active" data-change="">All</div>
+          <div class="change-btn" data-change="2">≥2%</div>
+          <div class="change-btn" data-change="5">≥5%</div>
+          <div class="change-btn" data-change="10">≥10%</div>
+          <div class="change-btn" data-change="15">≥15%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.1.0/dist/ag-grid-community.min.noStyle.js"></script>
+  <script>
+    const TODAY = new Date('2025-12-14');
+    const THREE_WEEKS_MS = 21 * 24 * 60 * 60 * 1000;
+    const END_DATE = new Date(TODAY.getTime() + THREE_WEEKS_MS);
+
+    function parsePercent(str) {
+      if (!str || str === "N/A") return null;
+      return parseFloat(str.replace(/%/g, '').trim());
+    }
+
+    function parseMarketCap(str) {
+      if (!str || str === "N/A") return null;
+      const cleaned = str.replace(/,/g, '').trim();
+      const num = parseFloat(cleaned);
+      if (isNaN(num)) return null;
+      return num * 1000;
+    }
+
+    function getCapCategory(value) {
+      if (value === null) return "N/A";
+      if (value > 200000000000) return "Mega";
+      if (value > 10000000000) return "Large";
+      if (value > 2000000000) return "Mid";
+      return "Small";
+    }
+
+    function parseEarningsDate(str) {
+      if (!str || str === "N/A" || str.trim() === "") return null;
+      const parts = str.split('/');
+      if (parts.length !== 3) return null;
+      let year = parseInt(parts[2]);
+      if (year < 100) year += year < 50 ? 2000 : 1900;
+      const month = parseInt(parts[0]) - 1;
+      const day = parseInt(parts[1]);
+      return new Date(year, month, day);
+    }
+
+    let gridApi;
+    let fixedCounts = {};
+    let dynamicCounts = {};
+    let barChart;
+
+    function calculateFixedCounts() {
+      fixedCounts = {};
+      gridApi.forEachNode(node => {
+        const ind = node.data.industry || "Unknown";
+        fixedCounts[ind] = (fixedCounts[ind] || 0) + 1;
+      });
+      gridApi.refreshCells({ columns: ['fixedCount'] });
+      updateBarChart();
+    }
+
+    function updateDynamicCounts() {
+      dynamicCounts = {};
+      gridApi.forEachNodeAfterFilter(node => {
+        const ind = node.data.industry || "Unknown";
+        dynamicCounts[ind] = (dynamicCounts[ind] || 0) + 1;
+      });
+      gridApi.refreshCells({ columns: ['dynamicCount'] });
+      updateStatus();
+    }
+
+    function getIndustryCount(industry, countsObj) {
+      return countsObj[industry || "Unknown"] || 0;
+    }
+
+    function updateBarChart() {
+      if (!barChart) return;
+
+      const filteredEntries = Object.entries(fixedCounts)
+        .filter(entry => entry[1] > 1 && entry[0] !== "Medical - Biomedical")
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12);
+
+      const labels = filteredEntries.map(entry => entry[0]);
+      const data = filteredEntries.map(entry => entry[1]);
+
+      barChart.data.labels = labels;
+      barChart.data.datasets[0].data = data;
+      barChart.update();
+    }
+
+    function updateStatus() {
+      const status = document.getElementById('status');
+      const rowCount = gridApi.getDisplayedRowCount();
+      let text = `Showing ${rowCount} stock${rowCount !== 1 ? 's' : ''}`;
+      const parts = [];
+      const activeCapBtn = document.querySelector('.cap-btn.active');
+      if (activeCapBtn && !activeCapBtn.classList.contains('all')) {
+        parts.push(`CAP: ${activeCapBtn.textContent.trim()}`);
+      }
+      const activeChangeBtn = document.querySelector('.change-btn.active');
+      if (activeChangeBtn && !activeChangeBtn.classList.contains('all')) {
+        parts.push(`GAINS ${activeChangeBtn.textContent.trim().replace('≥', '>=')}`);
+      }
+      const quickText = gridApi.getGridOption('quickFilterText') || '';
+      if (quickText) parts.push(`FILTER: ${quickText}`);
+      if (parts.length > 0) text += ` — ${parts.join(' , ')}`;
+      status.textContent = text;
+    }
+
+    const columnDefs = [
+      { headerName: "Symbol", field: "symbol", width: 100, pinned: 'left', cellStyle: { fontWeight: 'bold' } },
+
+      {
+        headerName: "Name",
+        field: "name",
+        width: 220,
+        minWidth: 180,
+        flex: 1.4,
+        filter: 'agTextColumnFilter',
+        floatingFilter: true,
+        sortable: true,
+        tooltipField: "name",
+        wrapText: true,
+        autoHeight: true,
+        cellClassRules: {
+          'neutral': params => params.value === 'N/A' || !params.value
+        }
+      },
+
+      {
+        headerName: "F#",
+        colId: 'fixedCount',
+        width: 60,
+        valueGetter: params => getIndustryCount(params.data.industry, fixedCounts),
+        cellStyle: { textAlign: 'center', fontWeight: 'bold', color: '#00d1a0' },
+        sortable: true
+      },
+
+      {
+        headerName: "D#",
+        colId: 'dynamicCount',
+        width: 60,
+        valueGetter: params => getIndustryCount(params.data.industry, dynamicCounts),
+        cellStyle: { textAlign: 'center', fontWeight: 'bold', color: '#60a5fa' },
+        sortable: true
+      },
+
+      { headerName: "Product Type", field: "industry", minWidth: 250, flex: 2, filter: 'agTextColumnFilter', floatingFilter: true, wrapText: true, autoHeight: true },
+
+      {
+        headerName: "Change %",
+        field: "percentChange",
+        width: 110,
+        valueGetter: params => parsePercent(params.data.percentChange),
+        valueFormatter: params => params.value === null ? "N/A" : (params.value > 0 ? '+' : '') + Math.round(params.value) + '%',
+        cellClassRules: { 'positive': p => p.value > 0, 'negative': p => p.value < 0 },
+        filter: 'agNumberColumnFilter'
+      },
+
+      { headerName: "5D %", field: "percentChange5d", width: 100, valueGetter: params => parsePercent(params.data.percentChange5d), valueFormatter: params => params.value == null ? "N/A" : Math.round(params.value) + '%' },
+
+      { headerName: "Cap Category", width: 120, valueGetter: params => getCapCategory(parseMarketCap(params.data.marketCap)), filter: 'agTextColumnFilter' },
+
+      { headerName: "Market Cap", field: "marketCap", width: 140 },
+
+      {
+        headerName: "Earnings",
+        field: "nextEarningsDate",
+        width: 140,
+        comparator: (a, b) => (parseEarningsDate(a) || 0) - (parseEarningsDate(b) || 0)
+      }
+    ];
+
+    const gridOptions = {
+      columnDefs: columnDefs,
+      rowData: null,
+      defaultColDef: { sortable: true, filter: true, resizable: true, floatingFilter: true },
+      animateRows: true
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Chart.register(ChartDataLabels);
+
+      const ctx = document.getElementById('industryBarChart').getContext('2d');
+      barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Stocks by Product Type',
+            data: [],
+            backgroundColor: '#00d1a0',
+            borderRadius: 4,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { color: '#3d4655' }, ticks: { color: '#9099a8', stepSize: 1 } },
+            y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 11 } } }
+          },
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#000',
+              anchor: 'end',
+              align: 'left',
+              font: { weight: 'bold' },
+              formatter: Math.round
+            }
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0 && gridApi) {
+              const index = elements[0].index;
+              const selectedIndustry = barChart.data.labels[index];
+              applyQuickFilter(selectedIndustry);
+            }
+          }
+        }
+      });
+
+      const gridDiv = document.querySelector('#myGrid');
+      gridApi = agGrid.createGrid(gridDiv, gridOptions);
+
+      gridApi.addEventListener('filterChanged', updateDynamicCounts);
+      gridApi.addEventListener('sortChanged', updateDynamicCounts);
+      gridApi.addEventListener('modelUpdated', updateDynamicCounts);
+
+      function applyQuickFilter(industry = null) {
+        let filterParts = [];
+        const activeCap = document.querySelector('.cap-btn.active')?.getAttribute('data-cap') || '';
+        if (activeCap) filterParts.push(activeCap);
+        if (industry) filterParts.push(industry);
+        gridApi.setGridOption('quickFilterText', filterParts.join(' '));
+      }
+
+      document.querySelectorAll('.cap-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.cap-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          applyQuickFilter();
+        });
+      });
+
+      document.querySelectorAll('.change-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.change-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const threshold = btn.getAttribute('data-change');
+          if (threshold === '') {
+            gridApi.setFilterModel(null);
+          } else {
+            gridApi.setFilterModel({
+              percentChange: { filterType: 'number', type: 'greaterThanOrEqual', filter: parseFloat(threshold) }
+            });
+          }
+          applyQuickFilter();
+        });
+      });
+
+      function loadData(filename) {
+        const fullPath = `barchart-stocks-grid/barchart-scraper/${filename}`;
+        fetch(fullPath)
+          .then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
+          .then(data => {
+            gridApi.setGridOption('rowData', data);
+            calculateFixedCounts();
+            updateDynamicCounts();
+          })
+          .catch(err => console.error("Data load error:", err));
+      }
+
+      const radios = document.querySelectorAll('input[name="dataSource"]');
+      radios.forEach(r => r.addEventListener('change', e => { if (e.target.checked) loadData(e.target.value); }));
+      loadData(document.querySelector('input[name="dataSource"]:checked').value);
+    });
+  </script>
+</body>
+</html>
